@@ -1,0 +1,111 @@
+---
+title: "PG"
+output:
+  pdf_document: default
+  html_document: default
+date: "2024-03-19"
+---
+
+```{r}
+# Install and load the quantmod package
+library(quantmod)
+
+# Specify the stock symbol and the time period
+stock_symbol <- "PG"  
+start_date <- "2023-12-12"
+end_date <- "2024-03-12"
+
+# Fetch the stock data
+PG_cp_trend <- getSymbols(stock_symbol, from = start_date, to = end_date)
+
+# Plot the closing price trend
+chartSeries(PG, type = "line", theme = "white", name = "Closing Price Trend")
+```
+
+```{r}
+# Read the CSV file
+PG <- read.csv("P_and_G_StockInfo.csv")
+```
+
+## Data Cleaning
+
+### PG data cleaning
+
+```{r}
+PG$Date <- as.Date(PG$Date, format = "%m/%d/%y")
+# Sort the data by the date column
+PG <- PG[order(PG$Date), ]
+
+PG <- na.omit(PG)
+```
+
+## Training
+
+```{r}
+train_PG <- subset(PG, Date >= as.Date("2023-12-12") & Date <= as.Date("2024-02-12"))
+test_PG <- subset(PG, !(Date >= as.Date("2023-12-12") & Date <= as.Date("2024-02-12")))
+closing_prices <- xts(PG$Close, order.by = PG$Date)
+library(tseries)
+
+# Perform the Augmented Dickey-Fuller test
+adf_result <- adf.test(closing_prices)
+
+# Print the test results
+print(adf_result)
+
+stationary_series <- diff(closing_prices)
+
+# Plot the original and differenced series
+par(mfrow=c(2,1))
+plot(closing_prices, main="Original Series", type='l')
+plot(stationary_series, main="Stationary Series (After Differencing)", type='l')
+stationary_series <- na.omit(stationary_series)
+
+adf_result_diff <- adf.test(stationary_series)
+
+# Print the test results
+print(adf_result_diff)
+CP_train<- xts(train_PG$Close, order.by = train_PG$Date)
+CP_test <- xts(test_PG$Close, order.by = test_PG$Date)
+library(forecast)
+
+start_date <- as.Date(start_date)
+time_series <- ts(data = CP_train, start = start_date, frequency = 1)
+
+# Identify the best ARIMA model using auto.arima
+arima_model <- auto.arima(time_series)
+
+# Print the identified ARIMA model
+print(arima_model)
+arima_model_1 <- arima(CP_train, order = c(0,1,0))
+arima_model_2 <- arima(CP_train, order = c(2,1,2))
+summary(arima_model_1)
+summary(arima_model_2)
+```
+
+
+```{r}
+test_PG$date <- as.Date(test_PG$Date)
+
+# Perform one-step forecast without re-estimation
+one_step_forecast <- forecast(arima_model, h = 1, newdata = test_PG)
+
+# plot the one-step forecast
+plot(one_step_forecast)
+
+points(test_PG$Date, test_PG$Close, col = 'red', type = 'p')
+```
+
+```{r}
+
+forecast_length <- nrow(test_PG)  # Number of rows to forecast
+forecasted_values <- forecast(arima_model, h = forecast_length+50)
+
+# Plot the forecast with historical data
+plot(forecasted_values)
+
+# Overlay the actual data points on the forecast plot
+lines(test_PG$Date, test_PG$Close, col = 'red')
+```
+
+
