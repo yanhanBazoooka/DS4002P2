@@ -21,6 +21,7 @@
 
 ## Documentation Map
 
+```console
 .
 ├── DATA
 │   ├── Minerva_Stockinfo.csv
@@ -33,6 +34,7 @@
     ├── Minerva_test.csv
     ├── Minerva_train.csv
     └── P_and_G_StockInfo.csv
+```
 
 
 
@@ -45,4 +47,6 @@ First, navigate to the `SCRIPT` folder, where we stored all the codes and locate
 After we have opened the corresponing `Rmd` file, feel free to look into the code blocks and the corresponding packages that we used. Simply click `run` to reproduce the results.
 
 Thank you!
+
+
 
